@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HCPI SD Rechner</title>
+ 
+<style>
+body{
+font-family:-apple-system,sans-serif;
+background:#f2f2f7;
+margin:0;
+padding:20px;
+}
+.card{
+max-width:500px;
+margin:auto;
+background:#fff;
+border-radius:20px;
+padding:20px;
+box-shadow:0 4px 12px rgba(0,0,0,.1);
+}
+h1{
+text-align:center;
+color:#003366;
+}
+label{
+display:block;
+margin-top:15px;
+font-weight:600;
+}
+input,select,button{
+width:100%;
+box-sizing:border-box;
+padding:14px;
+font-size:18px;
+border-radius:12px;
+margin-top:6px;
+}
+button{
+background:#0057b8;
+color:white;
+border:none;
+margin-top:20px;
+cursor:pointer;
+}
+.result{
+display:none;
+margin-top:20px;
+padding:15px;
+background:#eef5ff;
+border-radius:15px;
+text-align:center;
+}
+.sd{
+font-size:50px;
+font-weight:bold;
+color:#003366;
+}
+.error{
+color:red;
+margin-top:10px;
+}
+</style>
+ 
+</head>
+<body>
+ 
+<div class="card">
+ 
+<h1>SD-Rechner Bochumer GC</h1>
+ 
+<label>Runde</label>
+<select id="runde" onchange="toggleHCPI()">
+<option value="18-gelb">18 Loch Gelb</option>
+<option value="18-rot">18 Loch Rot</option>
+<option value="9A-gelb">9 Loch Front Nine Gelb</option>
+<option value="9B-gelb">9 Loch Back Nine Gelb</option>
+<option value="9A-rot">9 Loch Front Nine Rot</option>
+<option value="9B-rot">9 Loch Back Nine Rot</option>
+</select>
+ 
+<div id="hcpiContainer">
+<label>HCPI</label>
+<input type="text" inputmode="decimal" id="hcpi">
+</div>
+ 
+<label>GBE</label>
+<input type="text" inputmode="decimal" id="score">
+ 
+<button type="button" onclick="berechnen()">SD berechnen</button>
+ 
+<div id="error" class="error"></div>
+ 
+<div id="result" class="result">
+<div>Score Differential</div>
+<div id="sd" class="sd"></div>
+<div id="details"></div>
+</div>
+ 
+</div>
+ 
+<script>
+ 
+const daten = {
+"18-gelb": {cr:71.7,slope:133,typ:"18"},
+"18-rot": {cr:72.4,slope:128,typ:"18"},
+"9A-gelb": {cr:37.8,slope:142,typ:"9"},
+"9B-gelb": {cr:33.9,slope:126,typ:"9"},
+"9A-rot": {cr:38.1,slope:133,typ:"9"},
+"9B-rot": {cr:35.2,slope:128,typ:"9"}
+};
+ 
+function toggleHCPI(){
+const runde = document.getElementById("runde").value;
+const hcpiContainer = document.getElementById("hcpiContainer");
+ 
+if(runde.startsWith("9")){
+hcpiContainer.style.display = "block";
+} else {
+hcpiContainer.style.display = "none";
+document.getElementById("hcpi").value = "";
+}
+}
+ 
+function leseZahl(id){
+return parseFloat(
+document.getElementById(id).value
+.replace(",", ".")
+);
+}
+ 
+function berechnen(){
+ 
+const error = document.getElementById("error");
+error.textContent = "";
+ 
+try {
+ 
+let hcpi = leseZahl("hcpi");
+let score = leseZahl("score");
+ 
+if(isNaN(score)){
+throw new Error("Bitte GBE eingeben.");
+}
+ 
+if(isNaN(hcpi)){
+hcpi = 0;
+}
+ 
+const runde =
+document.getElementById("runde").value;
+ 
+const d = daten[runde];
+ 
+let sd;
+ 
+if(d.typ === "18"){
+ 
+sd =
+(score - d.cr) *
+113 /
+d.slope;
+ 
+document.getElementById("details")
+.innerHTML =
+"CR: " + d.cr +
+" | Slope: " + d.slope;
+ 
+} else {
+ 
+const diff9 =
+(score - d.cr) *
+113 /
+d.slope;
+ 
+const erwartet =
+hcpi * 0.52 + 1.2;
+ 
+sd = diff9 + erwartet;
+ 
+document.getElementById("details")
+.innerHTML =
+"9-Loch-Differential: " +
+diff9.toFixed(2) +
+"<br>Erwartungswert: " +
+erwartet.toFixed(2) +
+"<br><br><small>EW = HCPI × 0,52 + 1,2</small>";
+}
+ 
+document.getElementById("sd")
+.textContent =
+sd.toFixed(1);
+ 
+document.getElementById("result")
+.style.display =
+"block";
+ 
+}
+catch(e){
+error.textContent = e.message;
+}
+}
+ 
+toggleHCPI();
+ 
+</script>
+ 
+</body>
+</html>
